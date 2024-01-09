@@ -5,6 +5,8 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.QueryBuilder
+import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.javatime.timestamp
 import java.time.Instant
 
@@ -67,7 +69,18 @@ object Tables {
         val rolledBack = bool("rolled_back").clientDefault { false }
 
         init {
+            index("actions_by_time", false, timestamp)
+            index("actions_by_x", false, x)
+            index("actions_by_y", false, y)
+            index("actions_by_z", false, z)
             index("actions_by_location", false, x, y, z, world)
+        }
+
+        override fun describe(s: Transaction, queryBuilder: QueryBuilder) {
+            super.describe(s, queryBuilder)
+            if (queryBuilder.toString().startsWith("SELECT")) {
+                queryBuilder.append(" FORCE INDEX(actions_by_time,actions_by_x,actions_by_y,actions_by_z,actions_by_location) ")
+            }
         }
     }
 
